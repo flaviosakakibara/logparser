@@ -1,0 +1,9 @@
+INSTUPsrc.kafka_source
+/home/saka/Documents/igti/tg/code/primeiro_pyspark/src/kafka_source.py
+INFOS:&&3|1|2|0|3|16|5&&3|4|2|0|3|19|5&&3|5|2|0|3|21|5&&3|6|2|0|3|23|5
+sc=1
+ssc=4
+kafkaStream=5
+parsed=6
+/home/saka/Documents/igti/tg/code/primeiro_pyspark/src/kafka_source.py=3
+src.kafka_source=2
