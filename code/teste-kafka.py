@@ -13,4 +13,40 @@ if __name__ == '__main__':
 
     for message in consumer:
         message = message.value
-        print('{}'.format(message))
+        hostname = message['host']['name']
+        source_file = message['source']
+        message = message['message']
+        print("Li a mensagem: ", message,
+              "\n do host: ", hostname,
+              "\n no arquivo: ", source_file)
+    '''
+    Exemplo de output
+    {
+        '@timestamp': '2019-01-22T18:58:13.268Z',
+        '@metadata':
+        {
+            'beat': 'filebeat',
+            'type': 'doc',
+            'version': '6.4.2',
+            'topic': 'logs'
+        },
+        'input':
+        {
+            'type': 'log'
+        },
+        'beat':
+        {
+            'name': 'saka-pc',
+            'hostname': 'saka-pc',
+            'version': '6.4.2'
+        },
+        'host':
+        {
+            'name': 'saka-pc'
+        },
+        'source': '/var/log/teste/gluster.log',
+        'offset': 3864,
+        'message': '[ 19.568] (==) Matched nv as autoconfigured driver2',
+        'prospector': {'type': 'log'}
+    }
+    '''

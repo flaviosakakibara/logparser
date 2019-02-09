@@ -1,4 +1,5 @@
 import tensorflow as tf
+import numpy
 from tensorflow.examples.tutorials.mnist import input_data
 from tensorflow.python.ops import rnn, rnn_cell
 mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
@@ -22,10 +23,10 @@ def recurrent_neural_network(x):
 
     x = tf.transpose(x, [1, 0, 2])
     x = tf.reshape(x, [-1, chunk_size])
-    x = tf.split(0, n_chunks, x)
+    x = tf.split(x, n_chunks, 0)
 
-    lstm_cell = rnn_cell.BasicLSTMCell(rnn_size)
-    outputs, states = rnn.rnn(lstm_cell, x, dtype=tf.float32)
+    lstm_cell = rnn_cell.LSTMCell(rnn_size)
+    outputs, states = rnn.static_rnn(lstm_cell, x, dtype=tf.float32)
 
     output = tf.matmul(outputs[-1], layer['weights']) + layer['biases']
 
@@ -43,6 +44,7 @@ def train_neural_network(x):
 
         sess.run(tf.global_variables_initializer())
 
+        # Training the model
         for epoch in range(hm_epochs):
             epoch_loss = 0
             for _ in range(int(mnist.train.num_examples/batch_size)):
@@ -55,6 +57,7 @@ def train_neural_network(x):
             print('Epoch', epoch, 'completed out of',
                   hm_epochs, 'loss:', epoch_loss)
 
+        # at this point, all the weights and biases are optimized
         correct = tf.equal(tf.argmax(prediction, 1), tf.argmax(y, 1))
 
         accuracy = tf.reduce_mean(tf.cast(correct, 'float'))
