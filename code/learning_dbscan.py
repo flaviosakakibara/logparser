@@ -23,8 +23,9 @@ if __name__ == '__main__':
     print('\nStage 2: Scoring logs with TFIDF')
     with open(logFileWithoutUnwanted, 'r') as infile:
         logs = json.load(infile)
+    logsMessages = [log['message'] for log in logs]
     vectorizer = TfidfVectorizer()
-    scoredLogs = vectorizer.fit_transform(logs)
+    scoredLogs = vectorizer.fit_transform(logsMessages)
     print(scoredLogs[:10])
     print(scoredLogs.shape)
 
