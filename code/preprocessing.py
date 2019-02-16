@@ -58,7 +58,7 @@ def logParser(logFile):
     with open(logFile) as inFile:
 
         # defining progress bar
-        with tqdm(total=logFileLen*2,
+        with tqdm(
                   #   bar_format="{postfix[0]} {postfix[1][value]:>8.10g}/{postfix[1][total]} {percentage:3.0f}%",
                   postfix=["Logs", dict(value=0)]
                   ) as t:
