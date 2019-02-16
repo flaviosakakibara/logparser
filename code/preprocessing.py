@@ -15,14 +15,14 @@ def fileLen(file):
     return i + 1
 
 
-def generateParsed(logFile, logFileParsed):
+def generateParsed(logFile, logFileParsed, lineAmmount):
 
     if logFile.is_file():
         if logFileParsed.is_file():
             print("Log file already parsed... Moving on.")
             return 0
         else:
-            retCode, parsedLogs = logParser(logFile)
+            retCode, parsedLogs = logParser(logFile, lineAmmount)
             with open(logFileParsed, 'w') as outfile:
                 json.dump(parsedLogs, outfile)
             return 1
@@ -42,7 +42,7 @@ def generateWithoutUnwanted(logFileParsed, logFileWithoutUnwanted):
             json.dump(withoutUnwantedLogs, outfile)
 
 
-def logParser(logFile):
+def logParser(logFile, lineAmmount):
 
     en_stopwords = stopwords.words('english')
     isReading = False
@@ -82,8 +82,10 @@ def logParser(logFile):
                     continue
                 elif prefix == 'end_map':
                     isReading = False
-                    # print(parsedLog)
+                    numParsedLogs += 1
                     parsedLogs.append(parsedLog.copy())
+                    if numParsedLogs > lineAmmount:
+                        return 2
                 elif prefix == 'string':
                     if event == 'item.MESSAGE':
                         value = value.split()

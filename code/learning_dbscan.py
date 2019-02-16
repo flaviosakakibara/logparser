@@ -12,7 +12,7 @@ if __name__ == '__main__':
     logFileWithoutUnwanted = Path(prefixLogFile + '-wthout.json')
 
     print('\nStage 1: Preprocessing')
-    print('\n\t Parsing...') 
+    print('\n\t Parsing...')
     retcode, parsedLogs = generateParsed(logFile, logFileParsed)
     if retcode == -1:
         print('An error occurred!')
