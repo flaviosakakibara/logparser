@@ -7,19 +7,11 @@ from sklearn.preprocessing import StandardScaler
 
 if __name__ == '__main__':
 
-    prefixLogFile = '/home/flaviorissosakakibara/journalctl3'
-    logFile = Path(prefixLogFile + '.json')
-    logFileParsed = Path(prefixLogFile + '-parsed.json')
+    prefixLogFile = '/home/flaviorissosakakibara/journalctl3_1'
     logFileWithoutUnwanted = Path(prefixLogFile + '-wthout.json')
 
     print('\nStage 1: Preprocessing')
-    print('\n\t Parsing...')
-    retcode, parsedLogs = preprocessing.generateParsed(logFile, logFileParsed, 2891532)
-    if retcode == -1:
-        print('An error occurred!')
-        raise
-    print('\n\t Cleaning...')
-    preprocessing.generateWithoutUnwanted(logFileParsed, logFileWithoutUnwanted)
+    preprocessing.processLogFile(prefixLogFile)
 
     print('\nStage 2: Scoring logs with TFIDF')
     with open(logFileWithoutUnwanted, 'r') as infile:
