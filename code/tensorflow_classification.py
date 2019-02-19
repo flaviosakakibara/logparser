@@ -15,23 +15,36 @@ import preprocessing
 import re
 
 
-def removeUnwantedPatterns(listOfWords):
+def adjustPriority(priority, errorPriorities):
 
-    listOfPatterns = [
-        # IPV4
-        '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}',
-        # Localhost IPV6
-        '^::1'
-    ]
+    if priority in errorPriorities:
+        return 0
+    else:
+        return 1
 
-    for pattern in listOfPatterns:
 
-        pat = re.compile(pattern)
-        listOfWords = [word
-                       for word in listOfWords
-                       if not pat.match(word)]
+def createWordDict(fullDataset):
 
-    return listOfWords
+    # Extracting the messages from the dataset
+    # and spliting them into words
+    onlyMessages = [message
+                    for log in fullDataset
+                    for message in log['message'].split(' ')
+                    ]
+    onlyMessages = removeUnwantedPatterns(onlyMessages)
+    listOfDistinctWords = set(onlyMessages)
+    print('Messages: ', len(onlyMessages),
+          ' Distinct: ', len(listOfDistinctWords))
+
+    # Creating the word dictionary
+    wordDictionary = {word: index
+                      for index, word in enumerate(listOfDistinctWords, 2)}
+    wordDictionary['UNK'] = 0
+    wordDictionary['PAD'] = 1
+    wordNumber = len(wordDictionary)
+    saveWordDict(wordDictionary, wordDictionaryFile)
+
+    return wordDictionary, wordNumber
 
 
 def encodeMessage(message, wordDictionary):
@@ -51,18 +64,40 @@ def encodeWord(word, wordDictionary):
         return 0
 
 
-def adjustPriority(priority, errorPriorities):
+def generateTensor(listOfMessages):
 
-    if priority in errorPriorities:
-        return 0
-    else:
-        return 1
+    maxLen = 1000
+    padValue = 1
+    tensor = keras.preprocessing.sequence.pad_sequences(listOfMessages,
+                                                        value=padValue,
+                                                        padding='post',
+                                                        maxlen=maxLen)
+    return tensor
 
 
 def loadWordDict(wordDictionaryFile):
 
     with open(wordDictionaryFile, 'r') as infile:
         return json.load(infile)
+
+
+def removeUnwantedPatterns(listOfWords):
+
+    listOfPatterns = [
+        # IPV4
+        '\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}',
+        # Localhost IPV6
+        '^::1'
+    ]
+
+    for pattern in listOfPatterns:
+
+        pat = re.compile(pattern)
+        listOfWords = [word
+                       for word in listOfWords
+                       if not pat.match(word)]
+
+    return listOfWords
 
 
 def saveWordDict(wordDictionary, wordDictionaryFile):
@@ -122,24 +157,7 @@ if __name__ == '__main__':
                       for item in testingDataset]
 
     print('Stage 3: Creating word dictionary')
-    # Extracting the messages from the dataset
-    # and spliting them into words
-    onlyMessages = [message
-                    for log in fullDataset
-                    for message in log['message'].split(' ')
-                    ]
-    onlyMessages = removeUnwantedPatterns(onlyMessages)
-    listOfDistinctWords = set(onlyMessages)
-    print('Messages: ', len(onlyMessages),
-          ' Distinct: ', len(listOfDistinctWords))
-
-    # Creating the word dictionary
-    wordDictionary['UNK'] = 0
-    wordDictionary['PAD'] = 1
-    wordDictionary = {word: index
-                      for index, word in enumerate(listOfDistinctWords, 2)}
-    wordNumber = len(wordDictionary)
-    saveWordDict(wordDictionary, wordDictionaryFile)
+    wordDictionary, wordNumber = createWordDict(fullDataset)
 
     print('\nStage 4: Encoding datasets with dict')
     # Encoding Learning and Testing datasets
@@ -175,14 +193,8 @@ if __name__ == '__main__':
     # using a max size of 1000
     print('\nStage 5: Creating tensors')
     # Creating tensors
-    learningData = keras.preprocessing.sequence.pad_sequences(encLearningDsMessages,
-                                                              value=wordDictionary['PAD'],
-                                                              padding='post',
-                                                              maxlen=1000)
-    testingData = keras.preprocessing.sequence.pad_sequences(encTestingDsMessages,
-                                                             value=wordDictionary['PAD'],
-                                                             padding='post',
-                                                             maxlen=1000)
+    learningData = generateTensor(encLearningDsMessages)
+    testingData = generateTensor(encTestingDsMessages)
 
     # Defining model
     # Labels: 0 or 1 i.e error or not error
