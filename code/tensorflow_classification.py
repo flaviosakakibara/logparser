@@ -51,6 +51,14 @@ def encodeWord(word, wordDictionary):
         return 0
 
 
+def adjustPriority(priority, errorPriorities):
+
+    if priority in errorPriorities:
+        return 0
+    else:
+        return 1
+
+
 if __name__ == '__main__':
 
     class_names = ['error', 'info']
@@ -67,7 +75,8 @@ if __name__ == '__main__':
     errorPriorities = ['0', '1', '2', '3', '4']
     ratio = {
         'learning': 0.7,
-        'testing': 0.3
+        'testing': 0.3,
+        'validating': 0.5
     }
 
     prefixLogFile = '/home/flaviorissosakakibara/journalctl3_1'
@@ -84,11 +93,22 @@ if __name__ == '__main__':
     fullDatasetSize = len(fullDataset)
     learningDatasetSize = ceil(fullDatasetSize * ratio['learning'])
     testingDatasetSize = floor(fullDatasetSize * ratio['testing'])
+    validationSize = floor(learningDatasetSize * ratio['validating'])
     print('Size of dataset: ', fullDatasetSize,
           '\nLearning dataset size: ', learningDatasetSize,
           '\nTesting dataset size: ', testingDatasetSize)
     learningDataset = fullDataset.copy()[:learningDatasetSize]
     testingDataset = fullDataset.copy()[:learningDatasetSize-1:-1]
+
+    # Adjusting priorities to error labels
+    learningDataset = [{'priority': adjustPriority(item['priority'],
+                                                   errorPriorities),
+                        'message': item['message']}
+                       for item in learningDataset]
+    testingDataset = [{'priority': adjustPriority(item['priority'],
+                                                  errorPriorities),
+                       'message': item['message']}
+                      for item in testingDataset]
 
     # Extracting the messages from the dataset
     # and spliting them into words
@@ -139,11 +159,15 @@ if __name__ == '__main__':
     print('Max testing message: ', maxTestingMessage)  # 991
     # print(Counter([len(item['message']) for item in learningDataset]))
     # using a max size of 1000
+    # Creating tensors
     learningData = keras.preprocessing.sequence.pad_sequences(encLearningDsMessages,
                                                               value=wordDictionary['PAD'],
                                                               padding='post',
                                                               maxlen=1000)
-    print(learningData[0], learningData[1])
+    testingData = keras.preprocessing.sequence.pad_sequences(encTestingDsMessages,
+                                                             value=wordDictionary['PAD'],
+                                                             padding='post',
+                                                             maxlen=1000)
 
     # Defining model
     # Labels: 0 or 1 i.e error or not error
@@ -161,4 +185,63 @@ if __name__ == '__main__':
                   metrics=['accuracy'])
 
     # Generating validation data
-    x_val = 
+    valMessages = learningData[:validationSize]
+    partialValMessages = learningData[validationSize:]
+    valPriorities = encLearningDsPriority[:validationSize]
+    partialValPriorities = encLearningDsPriority[validationSize:]
+
+    print('\n', valMessages[:10])
+    print('\n', partialValMessages[:10])
+    print('\n', valPriorities[:10])
+    print('\n', partialValPriorities[:10])
+
+    # Training the model
+    history = model.fit(partialValMessages,
+                        partialValPriorities,
+                        epochs=10,
+                        batch_size=512,
+                        validation_data=(valMessages, valPriorities),
+                        verbose=1)
+
+    # Getting the results
+    results = model.evaluate(testingData, encTestingDsPriority)
+    print(results)
+
+    # Saving the model
+    modelFile = 'model10ep.hdf5'
+    model.save(modelFile,
+               overwrite=False,
+               include_optimizer=True)
+
+    # Accuracy over time
+    history_dict = history.history
+    history_dict.keys()
+
+    acc = history_dict['acc']
+    val_acc = history_dict['val_acc']
+    loss = history_dict['loss']
+    val_loss = history_dict['val_loss']
+
+    epochs = range(1, len(acc) + 1)
+
+    # "bo" is for "blue dot"
+    plt.plot(epochs, loss, 'bo', label='Training loss')
+    # b is for "solid blue line"
+    plt.plot(epochs, val_loss, 'b', label='Validation loss')
+    plt.title('Training and validation loss')
+    plt.xlabel('Epochs')
+    plt.ylabel('Loss')
+    plt.legend()
+
+    plt.show()
+
+    plt.clf()   # clear figure
+
+    plt.plot(epochs, acc, 'bo', label='Training acc')
+    plt.plot(epochs, val_acc, 'b', label='Validation acc')
+    plt.title('Training and validation accuracy')
+    plt.xlabel('Epochs')
+    plt.ylabel('Accuracy')
+    plt.legend()
+
+    plt.show()
