@@ -1,8 +1,14 @@
 from json import dumps, loads
 from kafka import KafkaConsumer
+from keras.models import load_model
 from time import sleep
 
+
 if __name__ == '__main__':
+
+    kerasModelFile = 'model10ep.hdf5'
+
+    kerasModel = load_model(kerasModelFile, compile=False)
     consumer = KafkaConsumer(
         'logs',
         bootstrap_servers=['localhost:9092'],

@@ -59,6 +59,17 @@ def adjustPriority(priority, errorPriorities):
         return 1
 
 
+def loadWordDict(wordDictionaryFile):
+
+    with open(wordDictionaryFile, 'r') as infile:
+        return json.load(infile)
+
+
+def saveWordDict(wordDictionary, wordDictionaryFile):
+
+    with open(wordDictionaryFile, 'w') as outfile:
+        json.dump(wordDictionary, outfile)
+
 if __name__ == '__main__':
 
     class_names = ['error', 'info']
@@ -81,9 +92,9 @@ if __name__ == '__main__':
 
     prefixLogFile = '/home/flaviorissosakakibara/journalctl3_1'
     logFileWithoutUnwanted = Path(prefixLogFile + '-wthout.json')
+    wordDictionaryFile = 'word_dictionary.json'
 
     print('\nStage 1: Preprocessing')
-    print('\n\t Parsing...')
     retcode = preprocessing.processLogFile(prefixLogFile)
 
     print('\nStage 2: Data preparation')
@@ -110,6 +121,7 @@ if __name__ == '__main__':
                        'message': item['message']}
                       for item in testingDataset]
 
+    print('Stage 3: Creating word dictionary')
     # Extracting the messages from the dataset
     # and spliting them into words
     onlyMessages = [message
@@ -122,12 +134,14 @@ if __name__ == '__main__':
           ' Distinct: ', len(listOfDistinctWords))
 
     # Creating the word dictionary
-    wordDictionary = {word: index
-                      for index, word in enumerate(listOfDistinctWords, 2)}
     wordDictionary['UNK'] = 0
     wordDictionary['PAD'] = 1
+    wordDictionary = {word: index
+                      for index, word in enumerate(listOfDistinctWords, 2)}
     wordNumber = len(wordDictionary)
+    saveWordDict(wordDictionary, wordDictionaryFile)
 
+    print('\nStage 4: Encoding datasets with dict')
     # Encoding Learning and Testing datasets
     encodedLearningDs = [{'priority': item['priority'],
                          'message': encodeMessage(item['message'],
@@ -159,6 +173,7 @@ if __name__ == '__main__':
     print('Max testing message: ', maxTestingMessage)  # 991
     # print(Counter([len(item['message']) for item in learningDataset]))
     # using a max size of 1000
+    print('\nStage 5: Creating tensors')
     # Creating tensors
     learningData = keras.preprocessing.sequence.pad_sequences(encLearningDsMessages,
                                                               value=wordDictionary['PAD'],
@@ -171,7 +186,7 @@ if __name__ == '__main__':
 
     # Defining model
     # Labels: 0 or 1 i.e error or not error
-
+    print('\nStage 6: Model definition and training')
     model = keras.Sequential()
     model.add(keras.layers.Embedding(wordNumber, 16))
     model.add(keras.layers.GlobalAveragePooling1D())
@@ -203,6 +218,7 @@ if __name__ == '__main__':
                         validation_data=(valMessages, valPriorities),
                         verbose=1)
 
+    print('\nStage 7: Model evaluation')
     # Getting the results
     results = model.evaluate(testingData, encTestingDsPriority)
     print(results)
