@@ -175,8 +175,8 @@ if __name__ == '__main__':
     maxTestingMessage = max([len(item['message'])
                              for item in testingDataset])
 
-    print(encodedLearningDs[:10])
-    print(encodedTestingDs[:10])
+    # print(encodedLearningDs[:10])
+    # print(encodedTestingDs[:10])
 
     encLearningDsMessages = [item['message']
                              for item in encodedLearningDs]

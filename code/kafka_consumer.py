@@ -1,14 +1,23 @@
 from json import dumps, loads
 from kafka import KafkaConsumer
 from keras.models import load_model
+from keras import Sequential
 from time import sleep
+import tensorflow as tf
+from tensorflow_classification import encodeMessage, loadWordDict, generateTensor
 
 
 if __name__ == '__main__':
 
+    # Loading keras model and word dictionary
     kerasModelFile = 'model10ep.hdf5'
+    wordDictFile = 'word_dictionary.json'
+    kerasModel = load_model(kerasModelFile,
+                            compile=False,
+                            custom_objects={"GlorotUniform": tf.keras.initializers.glorot_uniform}
+                            )
+    wordDict = loadWordDict(wordDictFile)
 
-    kerasModel = load_model(kerasModelFile, compile=False)
     consumer = KafkaConsumer(
         'logs',
         bootstrap_servers=['localhost:9092'],
@@ -18,13 +27,21 @@ if __name__ == '__main__':
         value_deserializer=lambda x: loads(x.decode('utf-8')))
 
     for message in consumer:
+        encodedMessage = []
         message = message.value
         hostname = message['host']['name']
         source_file = message['source']
         message = message['message']
-        print("Li a mensagem: ", message,
-              "\n do host: ", hostname,
-              "\n no arquivo: ", source_file)
+        encodedMessage.append(encodeMessage(message, wordDict))
+        tensor = generateTensor(encodedMessage)
+        prediction = kerasModel.predict(tensor)
+        # print('Prediction: ', prediction, ' ', message)
+        if prediction < 0.8:
+            print("Message readed: ", message,
+                  "\n from host: ", hostname,
+                  "\n in file: ", source_file)
+            print('The encoded message is: ', encodeMessage(message, wordDict))
+            print('Predicted Value: ', prediction)
     '''
     Exemplo de output
     {
