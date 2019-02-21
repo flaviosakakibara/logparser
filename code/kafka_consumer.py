@@ -9,39 +9,54 @@ from tensorflow_classification import encodeMessage, loadWordDict, generateTenso
 
 if __name__ == '__main__':
 
+    priorities = [
+        'emerg',
+        'alert',
+        'crit',
+        'err',
+        'warning',
+        'notice',
+        'info',
+        'debug'
+    ]
+    consumers = {}
+    for priority in priorities:
+        kConsumer = KafkaConsumer(
+            priority,
+            bootstrap_servers=['localhost:9092'],
+            auto_offset_reset='earliest',
+            enable_auto_commit=True,
+            group_id='my-group',
+            value_deserializer=lambda x: loads(x.decode('utf-8')))
+        consumers[str(priority)] = kConsumer
+
     # Loading keras model and word dictionary
-    kerasModelFile = 'model10ep.hdf5'
-    wordDictFile = 'word_dictionary.json'
+    kerasModelFile = 'dataset_tail-20.hdf5'
+    wordDictFile = 'dataset_tail.dict.json'
     kerasModel = load_model(kerasModelFile,
                             compile=False,
                             custom_objects={"GlorotUniform": tf.keras.initializers.glorot_uniform}
                             )
     wordDict = loadWordDict(wordDictFile)
 
-    consumer = KafkaConsumer(
-        'logs',
-        bootstrap_servers=['localhost:9092'],
-        auto_offset_reset='earliest',
-        enable_auto_commit=True,
-        group_id='my-group',
-        value_deserializer=lambda x: loads(x.decode('utf-8')))
-
-    for message in consumer:
+    evaluatedPriority = 'emerg'
+    messageTotal = 0
+    for message in consumers[str(evaluatedPriority)]:
         encodedMessage = []
+        # Parsing message readed on pipe
         message = message.value
         hostname = message['host']['name']
         source_file = message['source']
         message = message['message']
+
+        # Encoding message for model application
         encodedMessage.append(encodeMessage(message, wordDict))
         tensor = generateTensor(encodedMessage)
-        prediction = kerasModel.predict(tensor)
-        # print('Prediction: ', prediction, ' ', message)
-        if prediction < 0.8:
-            print("Message readed: ", message,
-                  "\n from host: ", hostname,
-                  "\n in file: ", source_file)
-            print('The encoded message is: ', encodeMessage(message, wordDict))
-            print('Predicted Value: ', prediction)
+        prediction = kerasModel.predict_classes(tensor)
+
+        print((prediction))
+
+
     '''
     Exemplo de output
     {

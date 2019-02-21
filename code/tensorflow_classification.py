@@ -138,6 +138,10 @@ if __name__ == '__main__':
     # Data exploration
     with open(logFileWithoutUnwanted, 'r') as infile:
         fullDataset = json.load(infile)
+    # removing warning priority
+    fullDataset = [item
+                   for item in fullDataset
+                   if item['priority'] != '4']
     fullDatasetSize = len(fullDataset)
     learningDatasetSize = ceil(fullDatasetSize * ratio['learning'])
     testingDatasetSize = floor(fullDatasetSize * ratio['testing'])
@@ -147,6 +151,10 @@ if __name__ == '__main__':
           '\nTesting dataset size: ', testingDatasetSize)
     learningDataset = fullDataset.copy()[:learningDatasetSize]
     testingDataset = fullDataset.copy()[:learningDatasetSize-1:-1]
+    for key, value in priorities.items():
+        print('\nPriority: ', key, ' value: ',
+              len(set([item['message'] for item in fullDataset if item['priority'] == key]))
+              )
 
     # Adjusting priorities to error labels
     learningDataset = [{'priority': adjustPriority(item['priority'],
