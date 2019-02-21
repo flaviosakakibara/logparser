@@ -66,7 +66,7 @@ def encodeWord(word, wordDictionary):
 
 def generateTensor(listOfMessages):
 
-    maxLen = 1000
+    maxLen = 1100
     padValue = 1
     tensor = keras.preprocessing.sequence.pad_sequences(listOfMessages,
                                                         value=padValue,
@@ -125,9 +125,11 @@ if __name__ == '__main__':
         'validating': 0.5
     }
 
-    prefixLogFile = '/home/flaviorissosakakibara/journalctl3_1'
+    dataset = 'dataset_tail'
+    epochs = 20
+    prefixLogFile = '/home/flaviorissosakakibara/datasets/parsed/'+dataset
     logFileWithoutUnwanted = Path(prefixLogFile + '-wthout.json')
-    wordDictionaryFile = 'word_dictionary.json'
+    wordDictionaryFile = dataset+'.dict.json'
 
     print('\nStage 1: Preprocessing')
     retcode = preprocessing.processLogFile(prefixLogFile)
@@ -225,7 +227,7 @@ if __name__ == '__main__':
     # Training the model
     history = model.fit(partialValMessages,
                         partialValPriorities,
-                        epochs=10,
+                        epochs=epochs,
                         batch_size=512,
                         validation_data=(valMessages, valPriorities),
                         verbose=1)
@@ -233,12 +235,12 @@ if __name__ == '__main__':
     print('\nStage 7: Model evaluation')
     # Getting the results
     results = model.evaluate(testingData, encTestingDsPriority)
-    print(results)
+    print('\nResults: ', results)
 
     # Saving the model
-    modelFile = 'model10ep.hdf5'
+    modelFile = dataset+'-'+str(epochs)+'.hdf5'
     model.save(modelFile,
-               overwrite=False,
+               overwrite=True,
                include_optimizer=True)
 
     # Accuracy over time
@@ -253,23 +255,23 @@ if __name__ == '__main__':
     epochs = range(1, len(acc) + 1)
 
     # "bo" is for "blue dot"
-    plt.plot(epochs, loss, 'bo', label='Training loss')
+    plt.plot(epochs, loss, 'bo', label='Perda - treinamento')
     # b is for "solid blue line"
-    plt.plot(epochs, val_loss, 'b', label='Validation loss')
-    plt.title('Training and validation loss')
+    plt.plot(epochs, val_loss, 'b', label='Perda - validação')
+    plt.title('Treinamento e validação: perda')
     plt.xlabel('Epochs')
-    plt.ylabel('Loss')
+    plt.ylabel('Perda')
     plt.legend()
 
     plt.show()
 
     plt.clf()   # clear figure
 
-    plt.plot(epochs, acc, 'bo', label='Training acc')
-    plt.plot(epochs, val_acc, 'b', label='Validation acc')
-    plt.title('Training and validation accuracy')
+    plt.plot(epochs, acc, 'bo', label='Acurácia - treinamento')
+    plt.plot(epochs, val_acc, 'b', label='Acurácia - validação')
+    plt.title('Treinamento e validação: Acurácia')
     plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
+    plt.ylabel('Acurácia')
     plt.legend()
 
     plt.show()

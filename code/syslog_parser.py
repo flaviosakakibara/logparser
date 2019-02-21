@@ -5,10 +5,9 @@ from os import listdir
 if __name__ == '__main__':
 
     listOfFiles = []
-    rootFolder = '/mnt/data/logs/'
+    rootFolder = '/home/flaviorissosakakibara/datasets'
     listOfFolders = [
-                    '/mnt/data/logs/logs_nao_balanceados',
-                    '/mnt/data/logs/logs_balanceados',
+                    '/home/flaviorissosakakibara/datasets',
                      ]
 
     for folder in listOfFolders:

@@ -151,19 +151,26 @@ def removeUnwantedLogs(logFileParsed):
 
 if __name__ == '__main__':
 
-    prefixLogFile = '/home/flaviorissosakakibara/journalctl3_1'
+    prefixLogFile = '/home/flaviorissosakakibara/datasets/parsed/dataset'
     # processLogFile(prefixLogFile)
     p1 = mp.Process(target=processLogFile,
                     args=(prefixLogFile,),
                     name='Process1')
 
-    prefixLogFile = '/home/flaviorissosakakibara/journalctl3_2'
+    prefixLogFile = '/home/flaviorissosakakibara/datasets/parsed/dataset_head'
     # processLogFile(prefixLogFile)
     p2 = mp.Process(target=processLogFile,
                     args=(prefixLogFile,),
                     name='Process2')
 
+    prefixLogFile = '/home/flaviorissosakakibara/datasets/parsed/dataset_tail'
+    # processLogFile(prefixLogFile)
+    p3 = mp.Process(target=processLogFile,
+                    args=(prefixLogFile,),
+                    name='Process2')
     p1.start()
     p2.start()
+    p3.start()
     p1.join()
     p2.join()
+    p3.join()
